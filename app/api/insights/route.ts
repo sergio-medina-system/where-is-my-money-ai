@@ -14,6 +14,9 @@ export async function POST(req: Request) {
 
   const prompt = `
 Analiza estos gastos y detecta posibles fugas de dinero.
+El texto FINAL NO debe superar 300 caracteres.
+Si es más largo, resume hasta cumplir el límite.
+No uses introducciones largas ni conclusiones genéricas.
 Devuelve:
 - Categoría con mayor gasto
 - Gastos repetidos o impulsivos
