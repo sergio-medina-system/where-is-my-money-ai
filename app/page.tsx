@@ -23,12 +23,10 @@ export default function Home() {
   const [nickname, setNickname] = useState<string | null>(null);
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
-
   const [insights, setInsights] = useState<string[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
   const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-
   const THRESHOLD = 50000;
   const level = Math.floor(total / THRESHOLD);
 
@@ -115,6 +113,11 @@ export default function Home() {
     recognition.onresult = (event: any) => {
       const text = event.results[0][0].transcript;
       setTranscript(text);
+
+      if ("vibrate" in navigator) {
+        navigator.vibrate(30);
+      }
+
       sendToAI(text);
     };
 
@@ -122,7 +125,23 @@ export default function Home() {
   }
 
   function formatDate(iso: string) {
-    return iso.split("T")[0];
+    return (iso || "").split("T")[0];
+  }
+
+  function formatMoney(n: number) {
+    return (n || 0).toLocaleString("es-CO");
+  }
+
+  function badgeFor(category: string) {
+    const c = (category || "").toLowerCase();
+    if (c.includes("comida") || c.includes("alimento") || c.includes("rest"))
+      return "🍔";
+    if (c.includes("trans") || c.includes("uber") || c.includes("taxi"))
+      return "🚕";
+    if (c.includes("arriendo") || c.includes("renta")) return "🏠";
+    if (c.includes("salud") || c.includes("farm")) return "💊";
+    if (c.includes("entre")) return "🎮";
+    return "🧾";
   }
 
   async function analyze() {
@@ -152,137 +171,392 @@ export default function Home() {
     }
   }
 
+  const styles: Record<string, React.CSSProperties> = {
+    page: {
+      minHeight: "100vh",
+      background:
+        "radial-gradient(1200px 600px at 20% -10%, #e9f6ff 0%, transparent 60%), radial-gradient(1000px 500px at 110% 10%, #fff1e8 0%, transparent 55%), #fbfbfd",
+      color: "#0f172a",
+      fontFamily:
+        "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji",
+    },
+    container: {
+      maxWidth: 760,
+      margin: "0 auto",
+      padding: "16px 14px 28px",
+    },
+    header: {
+      position: "sticky",
+      top: 0,
+      zIndex: 10,
+      backdropFilter: "blur(10px)",
+      background: "rgba(251,251,253,0.7)",
+      borderBottom: "1px solid rgba(15,23,42,0.08)",
+      padding: "14px 14px",
+      margin: "-16px -14px 16px",
+    },
+    titleRow: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    h1: { fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: -0.2 },
+    subtitle: { margin: "6px 0 0", color: "#475569", fontSize: 13 },
+    chip: {
+      fontSize: 12,
+      padding: "6px 10px",
+      borderRadius: 999,
+      border: "1px solid rgba(15,23,42,0.10)",
+      background: "white",
+      color: "#0f172a",
+      whiteSpace: "nowrap",
+    },
+    section: { display: "grid", gap: 12 },
+    card: {
+      background: "white",
+      border: "1px solid rgba(15,23,42,0.08)",
+      borderRadius: 16,
+      padding: 14,
+      boxShadow: "0 8px 30px rgba(15,23,42,0.06)",
+    },
+    label: { fontSize: 12, color: "#64748b", marginBottom: 6 },
+    input: {
+      width: "100%",
+      padding: "12px 12px",
+      borderRadius: 12,
+      border: "1px solid rgba(15,23,42,0.15)",
+      outline: "none",
+      fontSize: 16,
+    },
+    row: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" },
+    primaryBtn: {
+      width: "100%",
+      padding: "14px 14px",
+      borderRadius: 14,
+      border: "1px solid rgba(15,23,42,0.10)",
+      background: "#0f172a",
+      color: "white",
+      fontSize: 16,
+      fontWeight: 700,
+      cursor: "pointer",
+      boxShadow: "0 10px 25px rgba(15,23,42,0.18)",
+    },
+    secondaryBtn: {
+      width: "100%",
+      padding: "12px 14px",
+      borderRadius: 14,
+      border: "1px solid rgba(15,23,42,0.12)",
+      background: "white",
+      color: "#0f172a",
+      fontSize: 15,
+      fontWeight: 650,
+      cursor: "pointer",
+    },
+    muted: { color: "#64748b", fontSize: 13, margin: 0, lineHeight: 1.35 },
+    danger: {
+      background: "rgba(220,38,38,0.08)",
+      border: "1px solid rgba(220,38,38,0.25)",
+      color: "#b91c1c",
+      borderRadius: 14,
+      padding: "10px 12px",
+      fontSize: 13,
+    },
+    success: {
+      background: "rgba(16,185,129,0.10)",
+      border: "1px solid rgba(16,185,129,0.25)",
+      borderRadius: 14,
+      padding: "10px 12px",
+    },
+    metric: {
+      display: "flex",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+    },
+    bigNumber: { fontSize: 22, fontWeight: 850, letterSpacing: -0.4 },
+    small: { fontSize: 12, color: "#64748b" },
+    list: { display: "grid", gap: 10, marginTop: 10 },
+    listItem: {
+      display: "grid",
+      gridTemplateColumns: "28px 1fr auto",
+      gap: 10,
+      alignItems: "start",
+      padding: "10px 10px",
+      borderRadius: 14,
+      border: "1px solid rgba(15,23,42,0.08)",
+      background: "rgba(15,23,42,0.02)",
+    },
+    liTitle: { fontWeight: 700, fontSize: 14, margin: 0 },
+    liDesc: { margin: "2px 0 0", fontSize: 13, color: "#475569" },
+    amount: { fontWeight: 800, fontSize: 13, whiteSpace: "nowrap" },
+    divider: {
+      height: 1,
+      background: "rgba(15,23,42,0.08)",
+      margin: "6px 0 0",
+    },
+    bottomBar: {
+      position: "fixed",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: "12px 14px 14px",
+      background: "rgba(251,251,253,0.8)",
+      backdropFilter: "blur(12px)",
+      borderTop: "1px solid rgba(15,23,42,0.10)",
+      zIndex: 50,
+    },
+    bottomInner: {
+      maxWidth: 760,
+      margin: "0 auto",
+      display: "grid",
+      gap: 10,
+    },
+    hint: {
+      fontSize: 12,
+      color: "#64748b",
+      margin: 0,
+      textAlign: "center",
+    },
+  };
+
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700 }}>Where is my money? 💸</h1>
-
-      {nickname && (
-        <p>
-          Hola, <strong>{nickname}</strong> 👋
-        </p>
-      )}
-
-      {!nickname && (
-        <div style={{ marginTop: 16 }}>
-          <p>¿Cómo te llamamos?</p>
-          <input
-            placeholder="Ej: Sergio"
-            onBlur={(e) => {
-              const v = e.target.value.trim();
-              if (v) {
-                saveNickname(v);
-                setNickname(v);
-              }
-            }}
-            style={{
-              padding: 8,
-              borderRadius: 8,
-              border: "1px solid #ddd",
-            }}
-          />
+    <main style={styles.page}>
+      <div style={{ ...styles.container, paddingBottom: 110 }}>
+        <div style={styles.header}>
+          <div style={styles.titleRow}>
+            <div>
+              <h1 style={styles.h1}>Where is my money? 💸</h1>
+              <p style={styles.subtitle}>
+                Habla, guarda, y mira en qué se va tu plata.
+              </p>
+            </div>
+            <div style={styles.chip}>
+              Total: <strong>{formatMoney(total)}</strong> COP
+            </div>
+          </div>
         </div>
-      )}
 
-      <button
-        onClick={onSpeakClick}
-        disabled={loading}
-        style={{
-          marginTop: 16,
-          padding: "10px 14px",
-          borderRadius: 10,
-          border: "1px solid #ddd",
-          cursor: "pointer",
-          fontSize: 16,
-        }}
-      >
-        {loading ? "Procesando..." : "🎙️ Hablar"}
-      </button>
+        <div style={styles.section}>
+          {/* Nickname */}
+          {!nickname ? (
+            <div style={styles.card}>
+              <div style={styles.label}>
+                Tu nombre (solo en este dispositivo)
+              </div>
+              <input
+                placeholder="Ej: Sergio"
+                style={styles.input}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v) {
+                    saveNickname(v);
+                    setNickname(v);
+                  }
+                }}
+              />
+              <p style={{ ...styles.muted, marginTop: 10 }}>
+                Tip: así verás “Hola, Sergio 👋” cada vez que abras la app.
+              </p>
+            </div>
+          ) : (
+            <div style={styles.card}>
+              <p style={{ margin: 0 }}>
+                Hola, <strong>{nickname}</strong> 👋
+              </p>
+              <p style={{ ...styles.muted, marginTop: 6 }}>
+                Toca el botón y di: <em>“Gasté 12.000 en almuerzo”</em>.
+              </p>
+            </div>
+          )}
 
-      {transcript && (
-        <p style={{ marginTop: 16 }}>
-          <strong>Texto reconocido:</strong> {transcript}
-        </p>
-      )}
+          <div style={styles.card}>
+            {transcript && (
+              <div style={{ marginTop: 12 }}>
+                <div
+                  style={{
+                    ...styles.label,
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span>Texto reconocido</span>
+                  <span style={{ cursor: "pointer" }}>✏️</span>
+                </div>
 
-      {error && (
-        <p style={{ marginTop: 16, color: "crimson" }}>
-          <strong>Error:</strong> {error}
-        </p>
-      )}
+                <div style={{ fontSize: 14, color: "#0f172a" }}>
+                  {transcript}
+                </div>
+              </div>
+            )}
 
-      {expense && (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 14,
-            border: "1px solid #eee",
-            borderRadius: 12,
-          }}
-        >
-          <h2>✅ Gasto detectado</h2>
-          <p>
-            <strong>Monto:</strong> {expense.amount} {expense.currency}
-          </p>
-          <p>
-            <strong>Categoría:</strong> {expense.category}
-          </p>
-          <p>
-            <strong>Descripción:</strong> {expense.description}
-          </p>
-          <p>
-            <strong>Fecha:</strong> {expense.date}
-          </p>
-        </div>
-      )}
+            {error && (
+              <div style={{ ...styles.danger, marginTop: 12 }}>
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+          </div>
 
-      <p style={{ marginTop: 16, fontSize: 18 }}>
-        <strong>Total:</strong> {total.toLocaleString("es-CO")} COP
-      </p>
+          {/* Detected expense */}
+          {expense && (
+            <div style={{ ...styles.card, ...styles.success }}>
+              <p style={{ margin: 0, fontWeight: 800 }}>
+                {badgeFor(expense.category)} Gasto detectado
+              </p>
 
-      {level > 0 && (
-        <p style={{ color: "crimson", fontWeight: 600, marginTop: 8 }}>
-          ⚠️ Has gastado más de {(level * THRESHOLD).toLocaleString("es-CO")}{" "}
-          COP
-        </p>
-      )}
+              <div style={styles.divider} />
+              <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+                <div style={styles.metric}>
+                  <span style={styles.small}>Monto</span>
+                  <span style={{ fontWeight: 800 }}>
+                    {formatMoney(Number(expense.amount))} {expense.currency}
+                  </span>
+                </div>
+                <div style={styles.metric}>
+                  <span style={styles.small}>Categoría</span>
+                  <span style={{ fontWeight: 700 }}>{expense.category}</span>
+                </div>
+                <div style={styles.metric}>
+                  <span style={styles.small}>Descripción</span>
+                  <span style={{ fontWeight: 700 }}>{expense.description}</span>
+                </div>
+                <div style={styles.metric}>
+                  <span style={styles.small}>Fecha</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {formatDate(expense.date)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
-      <p style={{ marginTop: 16, color: "#555" }}>
-        🧠 Este análisis usa IA para detectar posibles fugas de dinero y hábitos
-        de gasto llamativos.
-      </p>
-      <button
-        onClick={analyze}
-        disabled={total < 50000 || analyzing}
-        style={{ opacity: total < 50000 ? 0.5 : 1 }}
-      >
-        {analyzing ? "Analizando..." : "🔍 Analizar fugas de dinero"}
-      </button>
+          {/* Total + warning */}
+          <div style={styles.card}>
+            <div style={styles.metric}>
+              <div>
+                <div style={styles.small}>Total gastado</div>
+                <div style={styles.bigNumber}>{formatMoney(total)} COP</div>
+              </div>
+              <div style={styles.chip}>
+                Meta IA: <strong>{formatMoney(THRESHOLD)}</strong>+
+              </div>
+            </div>
 
-      {total < THRESHOLD && (
-        <p style={{ fontSize: 12, color: "#999" }}>
-          Disponible cuando gastes más de 50.000 COP
-        </p>
-      )}
+            {level > 0 && (
+              <div style={{ ...styles.danger, marginTop: 10 }}>
+                ⚠️ Has superado {formatMoney(level * THRESHOLD)} COP
+              </div>
+            )}
 
-      {insights.length > 0 && (
-        <ul style={{ marginTop: 12 }}>
-          {insights.map((t, i) => (
-            <li key={i}>{t}</li>
-          ))}
-        </ul>
-      )}
-
-      {expenses.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <h2>📜 Historial</h2>
-          {expenses.map((e, i) => (
-            <p key={i}>
-              {formatDate(e.date)} – {e.category}: {e.description} ({e.amount}{" "}
-              {e.currency})
+            <p style={{ ...styles.muted, marginTop: 10 }}>
+              🧠 Al llegar a {formatMoney(THRESHOLD)} COP, la IA te sugiere
+              posibles “fugas” y hábitos a mejorar.
             </p>
-          ))}
+
+            <button
+              onClick={analyze}
+              disabled={total < THRESHOLD || analyzing}
+              style={{
+                ...styles.secondaryBtn,
+                opacity: total < THRESHOLD || analyzing ? 0.55 : 1,
+                marginTop: 10,
+              }}
+            >
+              {analyzing ? "Analizando..." : "🔍 Analizar fugas de dinero"}
+            </button>
+
+            {total < THRESHOLD && (
+              <p style={{ marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
+                Disponible cuando gastes más de {formatMoney(THRESHOLD)} COP
+              </p>
+            )}
+
+            {insights.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={styles.label}>Insights</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {insights.map((t, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: 14,
+                        border: "1px solid rgba(15,23,42,0.08)",
+                        background: "rgba(15,23,42,0.02)",
+                        fontSize: 13,
+                        color: "#0f172a",
+                      }}
+                    >
+                      {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* History */}
+          {expenses.length > 0 && (
+            <div style={styles.card}>
+              <div style={styles.titleRow}>
+                <h2 style={{ margin: 0, fontSize: 16, fontWeight: 850 }}>
+                  📜 Historial
+                </h2>
+                <span style={styles.small}>{expenses.length} registros</span>
+              </div>
+
+              <div style={styles.list}>
+                {expenses.slice(0, 20).map((e, i) => (
+                  <div key={i} style={styles.listItem}>
+                    <div style={{ fontSize: 18, lineHeight: 1 }}>
+                      {badgeFor(e.category)}
+                    </div>
+                    <div>
+                      <p style={styles.liTitle}>
+                        {e.category} · {formatDate(e.date)}
+                      </p>
+                      <p style={styles.liDesc}>{e.description}</p>
+                    </div>
+                    <div style={styles.amount}>
+                      {formatMoney(Number(e.amount))} {e.currency}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {expenses.length > 20 && (
+                <p style={{ ...styles.muted, marginTop: 10 }}>
+                  Mostrando 20 más recientes.
+                </p>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
+      <div style={styles.bottomBar}>
+        <div style={styles.bottomInner}>
+          <button
+            onClick={onSpeakClick}
+            disabled={loading}
+            style={{
+              ...styles.primaryBtn,
+              opacity: loading ? 0.75 : 1,
+            }}
+          >
+            {loading ? "Procesando..." : "🎙️ Toca y habla"}
+          </button>
+          <p style={styles.hint}>Ejemplo: “Gasté 12.000 en almuerzo”</p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "#94a3b8",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
+            Habla natural. La IA entiende frases incompletas.
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
