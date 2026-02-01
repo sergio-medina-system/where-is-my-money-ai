@@ -24,6 +24,9 @@ export default function Home() {
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
+  const [insights, setInsights] = useState<string[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+
   const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const THRESHOLD = 50000;
@@ -128,6 +131,33 @@ export default function Home() {
     }).format(d);
   }
 
+  async function analyze() {
+    try {
+      setAnalyzing(true);
+      setError("");
+
+      const res = await fetch("/api/insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expenses }),
+      });
+
+      const data = await res.json();
+      const text = data?.text || "";
+
+      const lines = text
+        .split("\n")
+        .map((l: string) => l.trim())
+        .filter(Boolean);
+
+      setInsights(lines);
+    } catch (e: any) {
+      setError(e?.message || "Error analizando");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   return (
     <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
       <h1 style={{ fontSize: 32, fontWeight: 700 }}>Where is my money? 💸</h1>
@@ -220,6 +250,32 @@ export default function Home() {
           ⚠️ Has gastado más de {(level * THRESHOLD).toLocaleString("es-CO")}{" "}
           COP
         </p>
+      )}
+
+      <p style={{ marginTop: 16, color: "#555" }}>
+        🧠 Este análisis usa IA para detectar posibles fugas de dinero y hábitos
+        de gasto llamativos.
+      </p>
+      <button
+        onClick={analyze}
+        disabled={total < 50000 || analyzing}
+        style={{ opacity: total < 50000 ? 0.5 : 1 }}
+      >
+        {analyzing ? "Analizando..." : "🔍 Analizar fugas de dinero"}
+      </button>
+
+      {total < THRESHOLD && (
+        <p style={{ fontSize: 12, color: "#999" }}>
+          Disponible cuando gastes más de 50.000 COP
+        </p>
+      )}
+
+      {insights.length > 0 && (
+        <ul style={{ marginTop: 12 }}>
+          {insights.map((t, i) => (
+            <li key={i}>{t}</li>
+          ))}
+        </ul>
       )}
 
       {expenses.length > 0 && (
