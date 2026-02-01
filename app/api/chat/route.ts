@@ -5,6 +5,28 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const CATEGORIES = [
+  "Comida",
+  "Bebidas",
+  "Transporte",
+  "Vivienda",
+  "Salud",
+  "Ocio",
+  "Compras",
+  "Servicios",
+  "Educación",
+  "Otros",
+] as const;
+
+const today = new Date().toISOString().slice(0, 10);
+
+function safeJsonParse(s: string) {
+  const start = s.indexOf("{");
+  const end = s.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("No JSON found");
+  return JSON.parse(s.slice(start, end + 1));
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -20,7 +42,7 @@ export async function POST(request: Request) {
       properties: {
         amount: { type: "number" },
         currency: { type: "string" },
-        category: { type: "string" },
+        category: { type: "string", enum: CATEGORIES },
         description: { type: "string" },
         date: { type: "string", description: "Fecha en formato YYYY-MM-DD" },
       },
@@ -34,7 +56,11 @@ export async function POST(request: Request) {
           role: "system",
           content:
             "Eres un asistente de gastos. Extrae UN solo gasto del texto en español. " +
-            "Si no hay currency usa COP. La fecha debe ser YYYY-MM-DD. Si no hay fecha usa hoy.",
+            "Si no hay currency usa COP. La fecha debe ser YYYY-MM-DD. Si no hay fecha usa hoy." +
+            "La categoría debe ser UNA de: " +
+            CATEGORIES.join(", ") +
+            ". " +
+            "Devuelve SOLO JSON. No agregues texto. ",
         },
         { role: "user", content: text },
       ],
@@ -49,7 +75,17 @@ export async function POST(request: Request) {
     });
 
     // output_text será un string que contiene JSON válido (por strict:true)
-    const parsed = JSON.parse(response.output_text);
+    const out: any = response;
+    const textOut = out.output_text as string | undefined;
+
+    if (!textOut) {
+      return NextResponse.json({ error: "Sin output_text" }, { status: 500 });
+    }
+
+    const raw = response.output_text; // string
+    const parsed = safeJsonParse(raw);
+
+    parsed.date = today;
 
     return NextResponse.json(parsed);
   } catch (err: any) {
