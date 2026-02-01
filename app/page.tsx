@@ -646,6 +646,23 @@ export default function Home() {
             Habla natural. La IA entiende frases incompletas.
           </p>
         </div>
+        <div
+          style={{
+            marginTop: 24,
+            padding: "12px 16px",
+            backgroundColor: "#FFF7E6",
+            border: "1px solid #FFD591",
+            borderRadius: 8,
+            fontSize: 13,
+            color: "#614700",
+            textAlign: "center",
+          }}
+        >
+          ⚠️ <strong>MVP en pruebas.</strong> Esta es una versión temprana. Los
+          datos pueden borrarse y{" "}
+          <strong>no se recomienda ingresar información sensible</strong>.
+          Estamos mejorando la experiencia con tu feedback.
+        </div>
       </div>
     </main>
   );
