@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         currency: { type: "string" },
         category: { type: "string" },
         description: { type: "string" },
-        date: { type: "string", description: "ISO 8601 date-time" },
+        date: { type: "string", description: "Fecha en formato YYYY-MM-DD" },
       },
       required: ["amount", "currency", "category", "description", "date"],
     } as const;
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
           role: "system",
           content:
             "Eres un asistente de gastos. Extrae UN solo gasto del texto en español. " +
-            "Si no hay currency usa COP. Si no hay fecha usa hoy.",
+            "Si no hay currency usa COP. La fecha debe ser YYYY-MM-DD. Si no hay fecha usa hoy.",
         },
         { role: "user", content: text },
       ],

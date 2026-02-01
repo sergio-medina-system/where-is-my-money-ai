@@ -22,8 +22,20 @@ export default function Home() {
   const [error, setError] = useState("");
   const [nickname, setNickname] = useState<string | null>(null);
 
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+
   useEffect(() => {
     setNickname(loadNickname());
+  }, []);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    fetch(`/api/expenses?userId=${userId}`)
+      .then((res) => res.json())
+      .then(setExpenses)
+      .catch(console.error);
   }, []);
 
   function getOrCreateUserId() {
@@ -63,6 +75,14 @@ export default function Home() {
       }
 
       setExpense(data as Expense);
+
+      await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, ...data }),
+      });
+
+      setExpenses((prev) => [data as Expense, ...prev]);
     } catch (e: any) {
       setError(e?.message || "Error de red");
     } finally {
@@ -91,6 +111,16 @@ export default function Home() {
     };
 
     recognition.start();
+  }
+
+  function formatDate(iso: string) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat("es-CO", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
   }
 
   return (
@@ -173,6 +203,17 @@ export default function Home() {
           <p>
             <strong>Fecha:</strong> {expense.date}
           </p>
+        </div>
+      )}
+
+      {expenses.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <h2>📜 Historial</h2>
+          {expenses.map((e, i) => (
+            <p key={i}>
+              {formatDate(e.date)} – {e.category}: {e.amount} {e.currency}
+            </p>
+          ))}
         </div>
       )}
     </main>
