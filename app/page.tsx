@@ -24,6 +24,11 @@ export default function Home() {
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
+  const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+  const THRESHOLD = 50000;
+  const level = Math.floor(total / THRESHOLD);
+
   useEffect(() => {
     setNickname(loadNickname());
   }, []);
@@ -206,12 +211,24 @@ export default function Home() {
         </div>
       )}
 
+      <p style={{ marginTop: 16, fontSize: 18 }}>
+        <strong>Total:</strong> {total.toLocaleString("es-CO")} COP
+      </p>
+
+      {level > 0 && (
+        <p style={{ color: "crimson", fontWeight: 600, marginTop: 8 }}>
+          ⚠️ Has gastado más de {(level * THRESHOLD).toLocaleString("es-CO")}{" "}
+          COP
+        </p>
+      )}
+
       {expenses.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <h2>📜 Historial</h2>
           {expenses.map((e, i) => (
             <p key={i}>
-              {formatDate(e.date)} – {e.category}: {e.amount} {e.currency}
+              {formatDate(e.date)} – {e.category}: {e.description} ({e.amount}{" "}
+              {e.currency})
             </p>
           ))}
         </div>
