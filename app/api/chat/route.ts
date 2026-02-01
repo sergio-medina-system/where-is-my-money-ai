@@ -36,6 +36,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Falta userId" }, { status: 400 });
     }
 
+    // Verify the request contains item and price and not another topic
+    const looksLikeExpense = /\d/.test(text); // mejor: numero + palabra
+    if (!looksLikeExpense)
+      return NextResponse.json(
+        { error: "Solo registro gastos. Ej: 'arepa 8000'" },
+        { status: 400 },
+      );
+
     const schema = {
       type: "object",
       additionalProperties: false,
@@ -45,8 +53,16 @@ export async function POST(request: Request) {
         category: { type: "string", enum: CATEGORIES },
         description: { type: "string" },
         date: { type: "string", description: "Fecha en formato YYYY-MM-DD" },
+        kind: { type: "string", enum: ["expense", "not_expense"] },
       },
-      required: ["amount", "currency", "category", "description", "date"],
+      required: [
+        "amount",
+        "currency",
+        "category",
+        "description",
+        "date",
+        "kind",
+      ],
     } as const;
 
     const response = await client.responses.create({
@@ -84,8 +100,13 @@ export async function POST(request: Request) {
 
     const raw = response.output_text; // string
     const parsed = safeJsonParse(raw);
+    console.log("before" + parsed.date);
+
+    console.log("before" + today);
 
     parsed.date = today;
+
+    console.log("after" + parsed.date);
 
     return NextResponse.json(parsed);
   } catch (err: any) {

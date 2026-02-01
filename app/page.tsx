@@ -122,13 +122,7 @@ export default function Home() {
   }
 
   function formatDate(iso: string) {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return new Intl.DateTimeFormat("es-CO", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(d);
+    return iso.split("T")[0];
   }
 
   async function analyze() {

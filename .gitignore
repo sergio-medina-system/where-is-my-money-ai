@@ -44,4 +44,5 @@ next-env.d.ts
 
 
 # SQL Lite db
+prisma/dev.db
 *.db
