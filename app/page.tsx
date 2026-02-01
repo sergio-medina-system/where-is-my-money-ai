@@ -28,6 +28,8 @@ export default function Home() {
 
   const [preparing, setPreparing] = useState(false);
 
+  const [nicknameDraft, setNicknameDraft] = useState("");
+
   const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const THRESHOLD = 50000;
   const level = Math.floor(total / THRESHOLD);
@@ -38,7 +40,9 @@ export default function Home() {
     msg?.toLowerCase().includes("parse");
 
   useEffect(() => {
-    setNickname(loadNickname());
+    const n = loadNickname();
+    setNickname(n);
+    if (n) setNicknameDraft(n);
   }, []);
 
   useEffect(() => {
@@ -384,25 +388,39 @@ export default function Home() {
 
         <div style={styles.section}>
           {/* Nickname */}
+          {/* Nickname */}
           {!nickname ? (
             <div style={styles.card}>
               <div style={styles.label}>
                 Tu nombre (solo en este dispositivo)
               </div>
-              <input
-                placeholder="Ej: Sergio"
-                style={styles.input}
-                onBlur={(e) => {
-                  const v = e.target.value.trim();
-                  if (v) {
-                    saveNickname(v);
-                    setNickname(v);
-                  }
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const v = nicknameDraft.trim();
+                  if (!v) return;
+                  saveNickname(v);
+                  setNickname(v);
                 }}
-              />
-              <p style={{ ...styles.muted, marginTop: 10 }}>
-                Tip: así verás “Hola, Sergio 👋” cada vez que abras la app.
-              </p>
+                style={{ display: "grid", gap: 10 }}
+              >
+                <input
+                  placeholder="Ej: Sergio"
+                  style={styles.input}
+                  value={nicknameDraft}
+                  onChange={(e) => setNicknameDraft(e.target.value)}
+                  enterKeyHint="done"
+                />
+
+                <button type="submit" style={styles.primaryBtn}>
+                  ✅ Continuar
+                </button>
+
+                <p style={{ ...styles.muted, textAlign: "center", margin: 0 }}>
+                  Presiona “Listo/Done” en el teclado o toca Continuar
+                </p>
+              </form>
             </div>
           ) : (
             <div style={styles.card}>
