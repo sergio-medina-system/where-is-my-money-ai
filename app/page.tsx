@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Expense = {
   amount: number;
@@ -10,26 +10,53 @@ type Expense = {
   date: string;
 };
 
+const loadNickname = () =>
+  typeof window === "undefined" ? null : localStorage.getItem("nickname");
+
+const saveNickname = (v: string) => localStorage.setItem("nickname", v);
+
 export default function Home() {
   const [transcript, setTranscript] = useState("");
   const [expense, setExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nickname, setNickname] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNickname(loadNickname());
+  }, []);
+
+  function getOrCreateUserId() {
+    if (typeof window === "undefined") return null;
+
+    let userId = localStorage.getItem("userId");
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem("userId", userId);
+    }
+    return userId;
+  }
 
   async function sendToAI(text: string) {
     setLoading(true);
     setError("");
     setExpense(null);
 
+    const userId = getOrCreateUserId();
+    if (!userId) {
+      setError("No se pudo obtener el usuario");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, userId }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         setError(data?.detail || data?.error || "Error llamando a /api/chat");
         return;
@@ -69,12 +96,37 @@ export default function Home() {
   return (
     <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
       <h1 style={{ fontSize: 32, fontWeight: 700 }}>Where is my money? 💸</h1>
-      <p style={{ marginTop: 8, fontSize: 16 }}>
-        MVP: registrar gastos por voz.
-      </p>
+
+      {nickname && (
+        <p>
+          Hola, <strong>{nickname}</strong> 👋
+        </p>
+      )}
+
+      {!nickname && (
+        <div style={{ marginTop: 16 }}>
+          <p>¿Cómo te llamamos?</p>
+          <input
+            placeholder="Ej: Sergio"
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v) {
+                saveNickname(v);
+                setNickname(v);
+              }
+            }}
+            style={{
+              padding: 8,
+              borderRadius: 8,
+              border: "1px solid #ddd",
+            }}
+          />
+        </div>
+      )}
 
       <button
         onClick={onSpeakClick}
+        disabled={loading}
         style={{
           marginTop: 16,
           padding: "10px 14px",
@@ -83,7 +135,6 @@ export default function Home() {
           cursor: "pointer",
           fontSize: 16,
         }}
-        disabled={loading}
       >
         {loading ? "Procesando..." : "🎙️ Hablar"}
       </button>
@@ -109,17 +160,17 @@ export default function Home() {
             borderRadius: 12,
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 18 }}>✅ Gasto detectado</h2>
-          <p style={{ margin: "8px 0 0" }}>
+          <h2>✅ Gasto detectado</h2>
+          <p>
             <strong>Monto:</strong> {expense.amount} {expense.currency}
           </p>
-          <p style={{ margin: "6px 0 0" }}>
+          <p>
             <strong>Categoría:</strong> {expense.category}
           </p>
-          <p style={{ margin: "6px 0 0" }}>
+          <p>
             <strong>Descripción:</strong> {expense.description}
           </p>
-          <p style={{ margin: "6px 0 0" }}>
+          <p>
             <strong>Fecha:</strong> {expense.date}
           </p>
         </div>

@@ -8,13 +8,10 @@ const client = new OpenAI({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const text = body?.text;
+    const { text, userId } = body;
 
-    if (!text || typeof text !== "string") {
-      return NextResponse.json(
-        { error: "Falta el campo 'text' (string)" },
-        { status: 400 },
-      );
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json({ error: "Falta userId" }, { status: 400 });
     }
 
     const schema = {
