@@ -26,9 +26,16 @@ export default function Home() {
   const [insights, setInsights] = useState<string[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
+  const [preparing, setPreparing] = useState(false);
+
   const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const THRESHOLD = 50000;
   const level = Math.floor(total / THRESHOLD);
+
+  const isInterpretationError = (msg: string) =>
+    msg?.toLowerCase().includes("entender") ||
+    msg?.toLowerCase().includes("interpret") ||
+    msg?.toLowerCase().includes("parse");
 
   useEffect(() => {
     setNickname(loadNickname());
@@ -113,6 +120,7 @@ export default function Home() {
     recognition.onresult = (event: any) => {
       const text = event.results[0][0].transcript;
       setTranscript(text);
+      setPreparing(false);
 
       if ("vibrate" in navigator) {
         navigator.vibrate(30);
@@ -121,7 +129,11 @@ export default function Home() {
       sendToAI(text);
     };
 
-    recognition.start();
+    setPreparing(true);
+
+    setTimeout(() => {
+      recognition.start();
+    }, 2000);
   }
 
   function formatDate(iso: string) {
@@ -169,6 +181,15 @@ export default function Home() {
     } finally {
       setAnalyzing(false);
     }
+  }
+
+  function resetFlow() {
+    setLoading(false);
+    setPreparing(false);
+    setError("");
+    setExpense(null);
+    // opcional:
+    // setTranscript("");
   }
 
   const styles: Record<string, React.CSSProperties> = {
@@ -317,6 +338,26 @@ export default function Home() {
       margin: 0,
       textAlign: "center",
     },
+    bottomNote: {
+      padding: "10px 12px",
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.18)",
+      background: "rgba(15,23,42,0.55)",
+      color: "white",
+      textAlign: "center",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
+    },
+    bottomNoteTitle: {
+      fontSize: 14,
+      fontWeight: 800,
+      margin: 0,
+    },
+    bottomNoteSub: {
+      fontSize: 13,
+      margin: "6px 0 0",
+      color: "rgba(255,255,255,0.85)",
+      lineHeight: 1.35,
+    },
   };
 
   return (
@@ -389,9 +430,37 @@ export default function Home() {
               </div>
             )}
 
-            {error && (
-              <div style={{ ...styles.danger, marginTop: 12 }}>
+            {error && isInterpretationError(error) && (
+              <div style={styles.danger}>
+                <p style={{ margin: 0, fontWeight: 800 }}>
+                  🤖 No logré entender el gasto
+                </p>
+                <ul style={{ margin: "6px 0 0 16px", fontSize: 13 }}>
+                  <li>Habla a velocidad normal</li>
+                  <li>Espera 3 segundos después de presionar el botón</li>
+                  <li>Sin palabras coloquiales</li>
+                  <li>Usa el nombre básico del producto</li>
+                </ul>
+                <p style={{ fontSize: 13, marginTop: 6 }}>
+                  <strong>Ejemplo:</strong> “Gasté 12.000 en almuerzo”
+                </p>
+              </div>
+            )}
+
+            {error && !isInterpretationError(error) && (
+              <div style={styles.danger}>
                 <strong>Error:</strong> {error}
+                <p style={{ margin: 0, fontWeight: 800 }}>
+                  🤖 No logré entender el gasto
+                </p>
+                <ul style={{ margin: "6px 0 0 16px", fontSize: 13 }}>
+                  <li>Habla a velocidad normal</li>
+                  <li>Sin palabras coloquiales</li>
+                  <li>Usa el nombre básico del producto</li>
+                </ul>
+                <p style={{ fontSize: 13, marginTop: 6 }}>
+                  <strong>Ejemplo:</strong> “Gasté 12.000 en almuerzo”
+                </p>
               </div>
             )}
           </div>
@@ -534,6 +603,17 @@ export default function Home() {
       </div>
       <div style={styles.bottomBar}>
         <div style={styles.bottomInner}>
+          <div style={styles.bottomNote}>
+            <p style={styles.bottomNoteTitle}>
+              {preparing ? "🎙️ Habla en 2 segundos…" : "💡 Ejemplo"}
+            </p>
+            <p style={styles.bottomNoteSub}>
+              {preparing
+                ? "Espera un momento y luego habla a velocidad normal."
+                : "“Gasté 12.000 en almuerzo”"}
+            </p>
+          </div>
+
           <button
             onClick={onSpeakClick}
             disabled={loading}
@@ -544,7 +624,17 @@ export default function Home() {
           >
             {loading ? "Procesando..." : "🎙️ Toca y habla"}
           </button>
-          <p style={styles.hint}>Ejemplo: “Gasté 12.000 en almuerzo”</p>
+          {loading && (
+            <button
+              onClick={resetFlow}
+              style={{
+                ...styles.secondaryBtn,
+                background: "rgba(255,255,255,0.9)",
+              }}
+            >
+              🔁 Reintentar
+            </button>
+          )}
           <p
             style={{
               fontSize: 11,
