@@ -362,7 +362,12 @@ export default function Home() {
 
   return (
     <main style={styles.page}>
-      <div style={{ ...styles.container, paddingBottom: 110 }}>
+      <div
+        style={{
+          ...styles.container,
+          paddingBottom: loading ? 380 : 320,
+        }}
+      >
         <div style={styles.header}>
           <div style={styles.titleRow}>
             <div>
